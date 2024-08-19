@@ -31,7 +31,7 @@ const manifest = deepmerge(
     permissions: ['storage', 'scripting'],
     options_page: 'options/index.html',
     commands: {
-      'open-ktab': {
+      'toggle-ktab': {
         suggested_key: {
           default: 'Ctrl+Shift+K',
           mac: 'Command+Shift+K',
