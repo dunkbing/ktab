@@ -1,51 +1,25 @@
-import type { KeyboardEventHandler } from 'react';
-import { forwardRef, useEffect, useRef } from 'react';
+import type { MouseEventHandler } from 'react';
+import React, { forwardRef, useEffect, useRef } from 'react';
 import { Command } from 'cmdk';
 import { Search, Clipboard, Key } from 'lucide-react';
 
 type CommandMenuProps = {
+  isOpen: boolean;
   onClose: () => void;
 };
 
-const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ onClose }, ref) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      console.log(event.key);
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose]);
-
-  const handleInputKeyDown: KeyboardEventHandler<HTMLInputElement> = event => {
-    if (event.key === 'Escape') {
-      event.preventDefault(); // Prevent the event from bubbling up
+const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, onClose }, ref) => {
+  if (!isOpen) return null;
+  const handleMouseDown: MouseEventHandler<HTMLDivElement> = e => {
+    if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div ref={menuRef} className="relative w-full max-w-2xl">
-        {/* Vibrancy background */}
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50" onMouseDown={handleMouseDown}>
+      <div className="relative w-full max-w-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl rounded-xl" />
-
         <Command
           label="Command Menu"
           className="relative w-full bg-gray-800/50 rounded-xl shadow-2xl overflow-hidden border border-gray-700/50">
@@ -55,7 +29,6 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ onClose },
               ref={ref}
               className="w-full bg-transparent text-gray-200 text-lg placeholder-gray-400 focus:outline-none"
               placeholder="Search for apps and commands..."
-              onKeyDown={handleInputKeyDown}
             />
           </div>
           <Command.List className="max-h-96 overflow-y-auto py-2">
@@ -113,25 +86,27 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ onClose },
 CommandMenu.displayName = 'CommandMenu';
 
 export default function App() {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = React.useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const toggleMenu = (show: boolean) => {
-    console.log('toggleMenu');
-    if (rootRef.current) {
-      rootRef.current.classList.toggle('hidden', !show);
-      rootRef.current.classList.toggle('block', show);
-      if (show && inputRef.current) {
-        inputRef.current.focus();
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      console.log('key', event.key);
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
       }
-    }
-  };
+    };
+
+    document.addEventListener('keyup', handleKeyDown);
+    return () => {
+      document.removeEventListener('keyup', handleKeyDown);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleMessage = (message: { request: string }) => {
-      console.log(message.request);
       if (message.request === 'toggle-ktab') {
-        toggleMenu(!rootRef.current?.classList.contains('block'));
+        setIsOpen(prev => !prev);
       }
     };
 
@@ -142,9 +117,11 @@ export default function App() {
     };
   }, []);
 
-  return (
-    <div className="hidden" ref={rootRef}>
-      <CommandMenu ref={inputRef} onClose={() => toggleMenu(false)} />
-    </div>
-  );
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  return <CommandMenu ref={inputRef} isOpen={isOpen} onClose={() => setIsOpen(false)} />;
 }

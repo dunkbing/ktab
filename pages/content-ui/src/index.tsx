@@ -26,3 +26,6 @@ shadowRoot.appendChild(rootIntoShadow);
 
 const reactRoot = createRoot(rootIntoShadow);
 reactRoot.render(<App />);
+
+rootIntoShadow.addEventListener('keydown', e => e.stopPropagation());
+rootIntoShadow.addEventListener('mousedown', e => e.stopPropagation());
