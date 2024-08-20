@@ -1,4 +1,5 @@
 import 'webextension-polyfill';
+import { commands } from '@extension/shared/lib/constants';
 
 console.log('background loaded');
 console.log("Edit 'chrome-extension/lib/background/index.ts' and save to reload.");
@@ -94,6 +95,7 @@ const searchTabs = (input: string): Promise<Suggestion[]> =>
           description: `Tab: ${tab.title}`,
           iconUrl: tab.favIconUrl,
           type: 'tab',
+          tabId: tab.id,
         })),
       );
     });
@@ -110,7 +112,7 @@ const removeDuplicates = (suggestions: Suggestion[]): Suggestion[] => {
   });
 };
 
-const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number = 10): Suggestion[] => {
+const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number = 20): Suggestion[] => {
   const tabSuggestions = suggestions.filter(s => s.type === 'tab');
   const otherSuggestions = suggestions.filter(s => s.type !== 'tab');
 
@@ -118,7 +120,7 @@ const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number
 };
 
 chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
-  if (request.type === 'GET_SUGGESTIONS' && request.input) {
+  if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
     (async () => {
       const [historySuggestions, bookmarkSuggestions, tabSuggestions, googleSuggestions] = await Promise.all([
@@ -140,6 +142,16 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
 
       sendResponse({ suggestions: prioritizedSuggestions });
     })();
+  } else if (request.type === commands.switchTab) {
+    const tabId = request.tabId as number;
+    if (tabId) {
+      chrome.tabs.update(tabId, { active: true });
+    }
+  } else if (request.type === commands.newTab) {
+    const url = request.url as string;
+    chrome.tabs.create({ url }, function (tab) {
+      console.log('New tab created with id: ' + tab.id);
+    });
   }
   return true;
 });

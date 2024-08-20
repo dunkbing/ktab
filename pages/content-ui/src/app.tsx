@@ -7,7 +7,6 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      console.log('key', event.key);
       if (event.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }

@@ -1,7 +1,8 @@
 import type { MouseEventHandler } from 'react';
 import { forwardRef, useEffect, useState } from 'react';
 import { Command } from 'cmdk';
-import { Search, History, Bookmark, Globe } from 'lucide-react';
+import { Search, History, Bookmark, Globe, MoveDown, MoveUp } from 'lucide-react';
+import { commands } from '@extension/shared/lib/constants';
 
 type CommandMenuProps = {
   isOpen: boolean;
@@ -13,16 +14,27 @@ type Suggestion = {
   description: string;
   type?: 'history' | 'bookmark' | 'tab' | 'search';
   iconUrl?: string;
+  tabId?: number;
 };
 
 const SummaryHeading = ({ results }: { results?: number }) => {
   return (
-    <div className="flex flex-row justify-between">
-      <span>Navigate using the arrow keys.</span>
+    <div className="flex flex-row justify-between py-1.5">
+      <span className="flex flex-row items-center">
+        Navigate using the arrow keys <MoveUp size={16} strokeWidth={3} />/<MoveDown size={16} strokeWidth={3} />
+      </span>
       {results && <span>{results} results </span>}
     </div>
   );
 };
+
+const actions = [
+  {
+    emoji: '📑',
+    url: 'https://doc.new',
+    description: 'Create a new google docs',
+  },
+];
 
 const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, onClose }, ref) => {
   const [input, setInput] = useState('');
@@ -31,16 +43,20 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   useEffect(() => {
     const getSuggestions = () => {
       if (input.length > 0) {
-        chrome.runtime.sendMessage({ type: 'GET_SUGGESTIONS', input }, (response: { suggestions: Suggestion[] }) => {
-          if (response && response.suggestions) {
-            setSuggestions(response.suggestions);
-          }
-        });
+        chrome.runtime.sendMessage(
+          { type: commands.getSuggestions, input },
+          (response: { suggestions: Suggestion[] }) => {
+            if (response && response.suggestions) {
+              setSuggestions(response.suggestions);
+            }
+          },
+        );
       } else {
         setSuggestions([]);
       }
     };
     const timeoutId = setTimeout(getSuggestions, 300);
+
     return () => clearTimeout(timeoutId);
   }, [input]);
 
@@ -49,15 +65,32 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   };
 
   const handleMouseDown: MouseEventHandler<HTMLDivElement> = e => {
+    console.log(e.target);
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
   const handleSuggestionSelect = (suggestion: Suggestion) => {
-    console.log('Selected suggestion:', suggestion);
-    // Handle the selection (e.g., navigate to URL or perform action)
-    // onClose();
+    return () => {
+      console.log('Selected suggestion:', suggestion);
+      if (suggestion.type === 'tab') {
+        chrome.runtime.sendMessage({ type: commands.switchTab, tabId: suggestion.tabId }, response => {
+          console.log(response);
+        });
+      } else if (suggestion.type) {
+        chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content }, response => {
+          console.log(response);
+        });
+      }
+      onClose?.();
+    };
+  };
+
+  const handleActionSelect = (url: string) => {
+    chrome.runtime.sendMessage({ type: commands.newTab, url }, response => {
+      console.log(response);
+    });
   };
 
   const getIconForSuggestion = (suggestion: Suggestion) => {
@@ -104,7 +137,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
                 <Command.Item
                   key={index}
                   value={suggestion.content}
-                  onSelect={() => handleSuggestionSelect(suggestion)}
+                  onSelect={handleSuggestionSelect(suggestion)}
                   className="flex items-center justify-between px-2 py-2 text-gray-200 rounded-md cursor-pointer aria-selected:bg-white/10">
                   <div className="flex items-center">
                     <div className="w-6 h-6 mr-3 bg-gray-700/50 rounded-md flex items-center justify-center">
@@ -113,6 +146,23 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
                     {suggestion.description}
                   </div>
                   <span className="text-gray-500 truncate ml-2 max-w-xs">{suggestion.content}</span>
+                </Command.Item>
+              ))}
+            </Command.Group>
+            <Command.Group heading="Quick actions" className="px-4 py-2 text-sm text-gray-400">
+              {actions.map(action => (
+                <Command.Item
+                  key={action.emoji}
+                  value={action.url}
+                  onSelect={handleActionSelect}
+                  className="flex items-center justify-between px-2 py-2 text-gray-200 rounded-md cursor-pointer aria-selected:bg-white/10">
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 mr-3 bg-gray-700/50 rounded-md flex items-center justify-center">
+                      {action.emoji}
+                    </div>
+                    {action.description}
+                  </div>
+                  <span className="text-gray-500 truncate ml-2 max-w-xs">{action.url}</span>
                 </Command.Item>
               ))}
             </Command.Group>
