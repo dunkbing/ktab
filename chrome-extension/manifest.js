@@ -17,7 +17,7 @@ const manifest = {
   version: packageJson.version,
   description: '__MSG_extensionDescription__',
   host_permissions: ['<all_urls>'],
-  permissions: ['storage', 'scripting', 'history', 'bookmarks', 'tabs'],
+  permissions: ['history', 'bookmarks', 'tabs'],
   omnibox: { keyword: 'newTab' },
   options_page: 'options/index.html',
   commands: {
