@@ -1,11 +1,11 @@
 {
   "extensionDescription": {
     "description": "Extension description",
-    "message": "Chrome extension boilerplate developed with Vite, React and Typescript"
+    "message": "Simple tool for effortlessly managing your tabs, bookmarks, and browser history"
   },
   "extensionName": {
     "description": "Extension name",
-    "message": "Chrome extension boilerplate"
+    "message": "KTab - Manage Tabs, History, and Bookmarks"
   },
   "toggleTheme": {
     "message": "Toggle theme"
