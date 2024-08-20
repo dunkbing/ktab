@@ -15,6 +15,15 @@ type Suggestion = {
   iconUrl?: string;
 };
 
+const SummaryHeading = ({ results }: { results?: number }) => {
+  return (
+    <div className="flex flex-row justify-between">
+      <span>Navigate using the arrow keys.</span>
+      {results && <span>{results} results </span>}
+    </div>
+  );
+};
+
 const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, onClose }, ref) => {
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -90,7 +99,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
             />
           </div>
           <Command.List className="max-h-96 overflow-y-auto py-2">
-            <Command.Group heading="Suggestions" className="px-4 py-2 text-sm text-gray-400">
+            <Command.Group heading={<SummaryHeading />} className="px-4 py-2 text-sm text-gray-400">
               {suggestions.map((suggestion, index) => (
                 <Command.Item
                   key={index}
