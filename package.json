@@ -1,11 +1,11 @@
 {
-  "name": "chrome-extension-boilerplate-react-vite",
+  "name": "ktab",
   "version": "0.3.1",
-  "description": "chrome extension boilerplate",
+  "description": "Simple tool for effortlessly managing your tabs, bookmarks, and browser history",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite.git"
+    "url": "https://github.com/dunkbing/ktab.git"
   },
   "scripts": {
     "clean": "turbo clean && turbo daemon stop && rimraf dist && rimraf .turbo",
