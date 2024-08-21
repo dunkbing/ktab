@@ -1,11 +1,10 @@
 import 'webextension-polyfill';
-import { commands } from '@extension/shared/lib/constants';
+import { commands, actions } from '@extension/shared/lib/constants';
+import type { Suggestion } from '@extension/shared/lib/types';
 
-console.log('background loaded');
-console.log("Edit 'chrome-extension/lib/background/index.ts' and save to reload.");
+console.log('KTab background loaded');
 
 chrome.commands.onCommand.addListener(async command => {
-  console.log(command);
   if (command === 'toggle-ktab') {
     const tab = await getCurrentTab();
     console.log(tab);
@@ -16,15 +15,6 @@ chrome.commands.onCommand.addListener(async command => {
       if (tab.id) {
         chrome.tabs.sendMessage(tab.id, { request: command });
       }
-    } else {
-      // chrome.tabs
-      //   .create({
-      //     url: './newtab.html',
-      //   })
-      //   .then(() => {
-      //     newtaburl = response.url;
-      //     chrome.tabs.remove(response.id);
-      //   });
     }
   }
 });
@@ -35,12 +25,9 @@ const getCurrentTab = async () => {
   return tab;
 };
 
-interface Suggestion {
-  content: string;
-  description: string;
-  type: string;
-  iconUrl?: string;
-}
+const searchActions = (input: string): Suggestion[] => {
+  return actions.filter(action => action.description.toLowerCase().includes(input.toLowerCase()));
+};
 
 const fetchGoogleSuggestions = async (input: string): Promise<Suggestion[]> => {
   try {
@@ -119,28 +106,33 @@ const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number
   return [...tabSuggestions, ...otherSuggestions].slice(0, maxResults);
 };
 
-chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
-    (async () => {
-      const [historySuggestions, bookmarkSuggestions, tabSuggestions, googleSuggestions] = await Promise.all([
-        searchHistory(input, 5),
-        searchBookmarks(input, 3),
-        searchTabs(input),
-        fetchGoogleSuggestions(input),
-      ]);
 
-      const allSuggestions = [
+    // Immediately search for quick-to-retrieve suggestions
+    (async () => {
+      const [historySuggestions, bookmarkSuggestions, tabSuggestions, actionSuggestions, googleSuggestions] =
+        await Promise.all([
+          searchHistory(input, 5),
+          searchBookmarks(input, 3),
+          searchTabs(input),
+          Promise.resolve(searchActions(input)),
+          fetchGoogleSuggestions(input),
+        ]);
+
+      const initialSuggestions = [
+        ...actionSuggestions,
         ...tabSuggestions,
         ...historySuggestions,
         ...bookmarkSuggestions,
-        ...googleSuggestions.slice(0, 5),
+        ...googleSuggestions,
       ];
 
-      const filteredSuggestions = removeDuplicates(allSuggestions);
-      const prioritizedSuggestions = prioritizeAndLimitResults(filteredSuggestions);
+      const filteredInitialSuggestions = removeDuplicates(initialSuggestions);
+      const prioritizedInitialSuggestions = prioritizeAndLimitResults(filteredInitialSuggestions);
 
-      sendResponse({ suggestions: prioritizedSuggestions });
+      sendResponse({ suggestions: prioritizedInitialSuggestions, complete: false });
     })();
   } else if (request.type === commands.switchTab) {
     const tabId = request.tabId as number;
@@ -157,12 +149,20 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
 });
 
 chrome.omnibox.onInputChanged.addListener((text, suggest) => {
-  Promise.all([searchHistory(text, 3), searchTabs(text), fetchGoogleSuggestions(text)]).then(
-    ([historySuggestions, tabSuggestions, googleSuggestions]) => {
-      const allSuggestions = [...tabSuggestions, ...historySuggestions, ...googleSuggestions.slice(0, 3)];
-      const filteredSuggestions = removeDuplicates(allSuggestions);
-      const prioritizedSuggestions = prioritizeAndLimitResults(filteredSuggestions, 6);
-      suggest(prioritizedSuggestions);
-    },
-  );
+  Promise.all([
+    searchHistory(text, 3),
+    searchTabs(text),
+    fetchGoogleSuggestions(text),
+    Promise.resolve(searchActions(text)),
+  ]).then(([historySuggestions, tabSuggestions, googleSuggestions, actionSuggestions]) => {
+    const allSuggestions = [
+      ...actionSuggestions,
+      ...tabSuggestions,
+      ...historySuggestions,
+      ...googleSuggestions.slice(0, 3),
+    ];
+    const filteredSuggestions = removeDuplicates(allSuggestions);
+    const prioritizedSuggestions = prioritizeAndLimitResults(filteredSuggestions, 6);
+    suggest(prioritizedSuggestions);
+  });
 });
