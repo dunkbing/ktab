@@ -65,7 +65,6 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   };
 
   const handleMouseDown: MouseEventHandler<HTMLDivElement> = e => {
-    console.log(e.target);
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -113,9 +112,9 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   return (
     <div
       role="presentation"
-      className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+      className="fixed inset-0 flex items-start justify-center bg-black/50 z-50"
       onMouseDown={handleMouseDown}>
-      <div className="relative w-full max-w-2xl">
+      <div className="relative w-full max-w-2xl mt-16">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl rounded-xl" />
         <Command
           label="Command Menu"
