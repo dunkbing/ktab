@@ -124,7 +124,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const initialSuggestions = [...actionSuggestions, ...tabSuggestions, ...googleSuggestions];
 
       const prioritizedInitialSuggestions = prioritizeAndLimitResults(initialSuggestions);
-      console.log({ prioritizedInitialSuggestions });
 
       sendResponse({ suggestions: prioritizedInitialSuggestions });
     })();

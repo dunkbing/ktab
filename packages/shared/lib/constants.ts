@@ -11,25 +11,25 @@ export const actions: Suggestion[] = [
     content: 'https://docs.new',
     description: 'Create a new Google Docs document',
     type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/docs-32.png'),
+    iconUrl: chrome.runtime.getURL('/assets/docs.png'),
   },
   {
     content: 'https://slides.new',
     description: 'Create a new Google Slides presentation',
     type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/slides.ico'),
+    iconUrl: chrome.runtime.getURL('/assets/slides.png'),
   },
   {
     content: 'https://sheets.new',
     description: 'Create a new Google Sheets spreadsheet',
     type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/sheets.ico'),
+    iconUrl: chrome.runtime.getURL('/assets/sheets.png'),
   },
   {
     content: 'https://www.notion.so/new',
     description: 'Create a new Notion page',
     type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/notion.ico'),
+    iconUrl: chrome.runtime.getURL('/assets/notion.png'),
   },
   {
     content: 'https://github.com/new',
@@ -41,6 +41,6 @@ export const actions: Suggestion[] = [
     content: 'https://trello.com/create-board',
     description: 'Create new Trello board',
     type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/trello.ico'),
+    iconUrl: chrome.runtime.getURL('/assets/trello.png'),
   },
 ];
