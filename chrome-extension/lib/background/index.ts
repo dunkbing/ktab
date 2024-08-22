@@ -26,16 +26,19 @@ const getCurrentTab = async () => {
 };
 
 const searchActions = (input: string): Suggestion[] => {
-  return actions.filter(action => action.description.toLowerCase().includes(input.toLowerCase()));
+  input = input.toLowerCase();
+  return actions.filter(
+    action => action.description.toLowerCase().includes(input) || action.content.toLowerCase().includes(input),
+  );
 };
 
-const fetchGoogleSuggestions = async (input: string): Promise<Suggestion[]> => {
+const fetchGoogleSuggestions = async (input: string, limit: number = 5): Promise<Suggestion[]> => {
   try {
     const response = await fetch(
       `http://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(input)}`,
     );
     const data: [string, string[]] = await response.json();
-    return data[1].map(suggestion => ({
+    return data[1].slice(0, limit).map(suggestion => ({
       content: `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`,
       description: `Search Google for: ${suggestion}`,
       type: 'search',
@@ -46,7 +49,7 @@ const fetchGoogleSuggestions = async (input: string): Promise<Suggestion[]> => {
   }
 };
 
-const searchHistory = (input: string, maxResults: number): Promise<Suggestion[]> =>
+const searchHistory = (input: string, maxResults = 5): Promise<Suggestion[]> =>
   new Promise(resolve => {
     chrome.history.search({ text: input, maxResults }, historyItems => {
       resolve(
@@ -59,7 +62,7 @@ const searchHistory = (input: string, maxResults: number): Promise<Suggestion[]>
     });
   });
 
-const searchBookmarks = (input: string, maxResults: number): Promise<Suggestion[]> =>
+const searchBookmarks = (input: string, maxResults = 5): Promise<Suggestion[]> =>
   new Promise(resolve => {
     chrome.bookmarks.search(input, bookmarkItems => {
       resolve(
@@ -88,17 +91,6 @@ const searchTabs = (input: string): Promise<Suggestion[]> =>
     });
   });
 
-const removeDuplicates = (suggestions: Suggestion[]): Suggestion[] => {
-  const seenUrls = new Set<string>();
-  return suggestions.filter(suggestion => {
-    if (seenUrls.has(suggestion.content)) {
-      return false;
-    }
-    seenUrls.add(suggestion.content);
-    return true;
-  });
-};
-
 const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number = 20): Suggestion[] => {
   const tabSuggestions = suggestions.filter(s => s.type === 'tab');
   const otherSuggestions = suggestions.filter(s => s.type !== 'tab');
@@ -109,30 +101,32 @@ const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
+    const command = request.command;
 
-    // Immediately search for quick-to-retrieve suggestions
     (async () => {
-      const [historySuggestions, bookmarkSuggestions, tabSuggestions, actionSuggestions, googleSuggestions] =
-        await Promise.all([
-          searchHistory(input, 5),
-          searchBookmarks(input, 3),
-          searchTabs(input),
-          Promise.resolve(searchActions(input)),
-          fetchGoogleSuggestions(input),
-        ]);
+      if (command === 'history') {
+        const suggestions = await searchHistory(input, 30);
+        return sendResponse({ suggestions });
+      } else if (command === 'bookmark') {
+        const suggestions = await searchBookmarks(input, 30);
+        return sendResponse({ suggestions });
+      } else if (command === 'tab') {
+        const suggestions = await searchTabs(input);
+        return sendResponse({ suggestions });
+      }
 
-      const initialSuggestions = [
-        ...actionSuggestions,
-        ...tabSuggestions,
-        ...historySuggestions,
-        ...bookmarkSuggestions,
-        ...googleSuggestions,
-      ];
+      const [tabSuggestions, actionSuggestions, googleSuggestions] = await Promise.all([
+        searchTabs(input),
+        Promise.resolve(searchActions(input)),
+        fetchGoogleSuggestions(input),
+      ]);
 
-      const filteredInitialSuggestions = removeDuplicates(initialSuggestions);
-      const prioritizedInitialSuggestions = prioritizeAndLimitResults(filteredInitialSuggestions);
+      const initialSuggestions = [...actionSuggestions, ...tabSuggestions, ...googleSuggestions];
 
-      sendResponse({ suggestions: prioritizedInitialSuggestions, complete: false });
+      const prioritizedInitialSuggestions = prioritizeAndLimitResults(initialSuggestions);
+      console.log({ prioritizedInitialSuggestions });
+
+      sendResponse({ suggestions: prioritizedInitialSuggestions });
     })();
   } else if (request.type === commands.switchTab) {
     const tabId = request.tabId as number;
@@ -145,24 +139,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log('New tab created with id: ' + tab.id);
     });
   }
-  return true;
-});
 
-chrome.omnibox.onInputChanged.addListener((text, suggest) => {
-  Promise.all([
-    searchHistory(text, 3),
-    searchTabs(text),
-    fetchGoogleSuggestions(text),
-    Promise.resolve(searchActions(text)),
-  ]).then(([historySuggestions, tabSuggestions, googleSuggestions, actionSuggestions]) => {
-    const allSuggestions = [
-      ...actionSuggestions,
-      ...tabSuggestions,
-      ...historySuggestions,
-      ...googleSuggestions.slice(0, 3),
-    ];
-    const filteredSuggestions = removeDuplicates(allSuggestions);
-    const prioritizedSuggestions = prioritizeAndLimitResults(filteredSuggestions, 6);
-    suggest(prioritizedSuggestions);
-  });
+  return true;
 });

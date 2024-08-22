@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 import { Command } from 'cmdk';
 import { Search, History, Bookmark, Globe, MoveDown, MoveUp, Loader } from 'lucide-react';
 
@@ -56,18 +56,19 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   const [suggestions, setSuggestions] = useState<Suggestion[]>(actions);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = useCallback((value: string) => {
+  const handleInputChange = (value: string) => {
     setInput(value);
     setIsLoading(true);
-  }, []);
+  };
 
   useEffect(() => {
     const getSuggestions = () => {
       if (input.length > 0) {
         chrome.runtime.sendMessage(
           { type: commands.getSuggestions, input },
-          (response: { suggestions: Suggestion[]; complete: boolean }) => {
-            if (response && response.suggestions) {
+          (response: { suggestions: Suggestion[] }) => {
+            console.log(response);
+            if (response?.suggestions) {
               setSuggestions(response.suggestions);
               setIsLoading(false);
             }
@@ -83,30 +84,24 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
     return () => clearTimeout(timeoutId);
   }, [input]);
 
-  const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = useCallback(
-    e => {
-      if (e.target === e.currentTarget) {
-        onClose();
+  const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = e => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleSuggestionSelect = (suggestion: Suggestion) => {
+    return () => {
+      if (suggestion.type === 'tab') {
+        chrome.runtime.sendMessage({ type: commands.switchTab, tabId: suggestion.tabId });
+      } else if (suggestion.type) {
+        chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
       }
-    },
-    [onClose],
-  );
+      onClose?.();
+    };
+  };
 
-  const handleSuggestionSelect = useCallback(
-    (suggestion: Suggestion) => {
-      return () => {
-        if (suggestion.type === 'tab') {
-          chrome.runtime.sendMessage({ type: commands.switchTab, tabId: suggestion.tabId });
-        } else if (suggestion.type) {
-          chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
-        }
-        onClose?.();
-      };
-    },
-    [onClose],
-  );
-
-  const getIconForSuggestion = useCallback((suggestion: Suggestion) => {
+  const getIconForSuggestion = (suggestion: Suggestion) => {
     switch (suggestion.type) {
       case 'history':
         return <History className="w-5 h-5 text-blue-400" />;
@@ -121,20 +116,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
       default:
         return <Globe className="w-5 h-5 text-gray-400" />;
     }
-  }, []);
-
-  const memoizedSuggestions = useMemo(
-    () =>
-      suggestions.map(suggestion => (
-        <CommandMenuItem
-          key={suggestion.content}
-          suggestion={suggestion}
-          onSelect={handleSuggestionSelect(suggestion)}
-          getIconForSuggestion={getIconForSuggestion}
-        />
-      )),
-    [suggestions, handleSuggestionSelect, getIconForSuggestion],
-  );
+  };
 
   if (!isOpen) return null;
 
@@ -160,14 +142,30 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
               ref={ref}
               onValueChange={handleInputChange}
               className="w-full bg-transparent text-gray-200 text-lg placeholder-gray-400 focus:outline-none"
-              placeholder="Search for apps and commands..."
+              placeholder="Search or enter a command..."
             />
           </div>
           <SummaryHeading results={suggestions.length} />
-          <Command.List className="max-h-96 overflow-y-auto py-2">
-            {suggestions.length > 0 && (
-              <Command.Group className="px-4 py-2 text-sm text-gray-400">{memoizedSuggestions}</Command.Group>
-            )}
+          <Command.List className="max-h-96 overflow-y-auto pb-2">
+            <Command.Group className="px-4 py-2 text-sm text-gray-400">
+              {suggestions.map(suggestion => (
+                <Command.Item
+                  key={`${suggestion.content}`}
+                  value={suggestion.content}
+                  onSelect={handleSuggestionSelect(suggestion)}
+                  className="flex items-center px-2 py-2 text-gray-200 rounded-md cursor-pointer aria-selected:bg-white/10 transition-all duration-200 ease-in-out hover:bg-white/5">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <div className="w-8 h-8 mr-3 bg-gray-700/50 rounded-md flex items-center justify-center flex-shrink-0">
+                      {getIconForSuggestion(suggestion)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate">{suggestion.description}</div>
+                      <div className="text-sm text-gray-500 truncate">{suggestion.content}</div>
+                    </div>
+                  </div>
+                </Command.Item>
+              ))}
+            </Command.Group>
           </Command.List>
         </Command>
       </div>
