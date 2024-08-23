@@ -98,11 +98,15 @@ const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number
   return [...tabSuggestions, ...otherSuggestions].slice(0, maxResults);
 };
 
+function isWebsite(input: string): boolean {
+  const websiteRegex = /^([\w-]+\.)+[\w-]{2,}$/;
+  return websiteRegex.test(input);
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
     const command = request.command;
-
     (async () => {
       if (command === 'history') {
         const suggestions = await searchHistory(input, 30);
@@ -123,8 +127,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       const initialSuggestions = [...actionSuggestions, ...tabSuggestions, ...googleSuggestions];
 
-      const prioritizedInitialSuggestions = prioritizeAndLimitResults(initialSuggestions);
+      if (isWebsite(input)) {
+        const websiteSuggestion: Suggestion = {
+          content: `https://${input}`,
+          description: `Go to ${input}`,
+          type: 'website',
+        };
+        initialSuggestions.unshift(websiteSuggestion);
+      }
 
+      const prioritizedInitialSuggestions = prioritizeAndLimitResults(initialSuggestions);
       sendResponse({ suggestions: prioritizedInitialSuggestions });
     })();
   } else if (request.type === commands.switchTab) {
