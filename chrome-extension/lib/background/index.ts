@@ -4,6 +4,12 @@ import type { Suggestion } from '@extension/shared/lib/types';
 
 console.log('KTab background loaded');
 
+chrome.action.onClicked.addListener(tab => {
+  if (tab.id) {
+    chrome.tabs.sendMessage(tab.id, { request: 'toggle-ktab' });
+  }
+});
+
 chrome.commands.onCommand.addListener(async command => {
   if (command === 'toggle-ktab') {
     const tab = await getCurrentTab();

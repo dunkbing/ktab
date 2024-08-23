@@ -16,8 +16,7 @@ const manifest = {
   name: '__MSG_extensionName__',
   version: packageJson.version,
   description: '__MSG_extensionDescription__',
-  host_permissions: ['<all_urls>'],
-  permissions: ['history', 'bookmarks', 'tabs', 'storage'],
+  permissions: ['history', 'bookmarks', 'tabs', 'storage', 'activeTab'],
   omnibox: { keyword: 'newTab' },
   options_page: 'options/index.html',
   commands: {
@@ -34,7 +33,6 @@ const manifest = {
     type: 'module',
   },
   action: {
-    default_popup: 'popup/index.html',
     default_icon: 'icon-34.png',
   },
   icons: {
