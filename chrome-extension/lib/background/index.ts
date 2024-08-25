@@ -55,47 +55,67 @@ const fetchGoogleSuggestions = async (input: string, limit: number = 5): Promise
   }
 };
 
-const searchHistory = (input: string, maxResults = 5): Promise<Suggestion[]> =>
-  new Promise(resolve => {
-    chrome.history.search({ text: input, maxResults }, historyItems => {
-      resolve(
-        historyItems.map(item => ({
+const fetchFavicon = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(`https://s2.googleusercontent.com/s2/favicons?domain=${url}`);
+    if (response.ok) {
+      return response.url;
+    }
+  } catch (error) {
+    console.error('Error fetching favicon:', error);
+  }
+  return chrome.runtime.getURL('/assets/default-favicon.png');
+};
+
+const searchHistory = async (input: string, maxResults = 5): Promise<Suggestion[]> => {
+  return new Promise(resolve => {
+    chrome.history.search({ text: input, maxResults }, async historyItems => {
+      const suggestions = await Promise.all(
+        historyItems.map(async item => ({
           content: item.url!,
           description: `History: ${item.title}`,
-          type: 'history',
+          type: 'history' as const,
+          iconUrl: await fetchFavicon(item.url!),
         })),
       );
+      resolve(suggestions);
     });
   });
+};
 
-const searchBookmarks = (input: string, maxResults = 5): Promise<Suggestion[]> =>
-  new Promise(resolve => {
-    chrome.bookmarks.search(input, bookmarkItems => {
-      resolve(
-        bookmarkItems.slice(0, maxResults).map(item => ({
+const searchBookmarks = async (input: string, maxResults = 5): Promise<Suggestion[]> => {
+  return new Promise(resolve => {
+    chrome.bookmarks.search(input, async bookmarkItems => {
+      const suggestions = await Promise.all(
+        bookmarkItems.slice(0, maxResults).map(async item => ({
           content: item.url!,
           description: `Bookmark: ${item.title}`,
-          type: 'bookmark',
+          type: 'bookmark' as const,
+          iconUrl: await fetchFavicon(item.url!),
         })),
       );
+      resolve(suggestions);
     });
   });
+};
 
-const searchTabs = (input: string): Promise<Suggestion[]> =>
-  new Promise(resolve => {
-    chrome.tabs.query({}, tabs => {
+const searchTabs = async (input: string): Promise<Suggestion[]> => {
+  return new Promise(resolve => {
+    chrome.tabs.query({}, async tabs => {
       const matchingTabs = tabs.filter(tab => tab.title && tab.title.toLowerCase().includes(input.toLowerCase()));
-      resolve(
-        matchingTabs.map(tab => ({
+      const suggestions = await Promise.all(
+        matchingTabs.map(async tab => ({
           content: tab.url!,
           description: `Tab: ${tab.title}`,
-          iconUrl: tab.favIconUrl,
-          type: 'tab',
+          iconUrl: tab.favIconUrl || (await fetchFavicon(tab.url!)),
+          type: 'tab' as const,
           tabId: tab.id,
         })),
       );
+      resolve(suggestions);
     });
   });
+};
 
 const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number = 20): Suggestion[] => {
   const tabSuggestions = suggestions.filter(s => s.type === 'tab');
@@ -138,13 +158,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           content: `https://${input}`,
           description: `Go to ${input}`,
           type: 'website',
+          iconUrl: await fetchFavicon(`https://${input}`),
         };
         initialSuggestions.unshift(websiteSuggestion);
       }
 
-      const prioritizedInitialSuggestions = prioritizeAndLimitResults(initialSuggestions);
-      sendResponse({ suggestions: prioritizedInitialSuggestions });
+      const prioritizedSuggestions = prioritizeAndLimitResults(initialSuggestions);
+      sendResponse({ suggestions: prioritizedSuggestions });
     })();
+
+    return true;
   } else if (request.type === commands.switchTab) {
     const tabId = request.tabId as number;
     if (tabId) {
@@ -154,6 +177,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const url = request.url as string;
     chrome.tabs.create({ url }, function (tab) {
       console.log('New tab created with id: ' + tab.id);
+    });
+  } else if (request.type === commands.clearHistory) {
+    chrome.history.deleteAll(() => {
+      console.log('Browsing history cleared');
+    });
+  } else if (request.type === 'RESTORE_TAB') {
+    const sessionId = request.sessionId as string;
+    chrome.sessions.restore(sessionId, restoredSession => {
+      if (restoredSession && restoredSession.tab) {
+        chrome.tabs.update(restoredSession.tab.id!, { active: true });
+      }
     });
   }
 

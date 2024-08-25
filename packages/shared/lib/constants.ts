@@ -4,6 +4,7 @@ export const commands = {
   getSuggestions: 'GET_SUGGESTIONS',
   switchTab: 'SWITCH_TAB',
   newTab: 'NEW_TAB',
+  clearHistory: 'CLEAR_HISTORY',
 };
 
 export const actions: Suggestion[] = [
@@ -42,5 +43,23 @@ export const actions: Suggestion[] = [
     description: 'Create new Trello board',
     type: 'action',
     iconUrl: chrome.runtime.getURL('/assets/trello.png'),
+  },
+  {
+    content: 'https://meet.new',
+    description: 'Start a new Google Meet',
+    type: 'action',
+    iconUrl: chrome.runtime.getURL('/assets/meet.png'),
+  },
+  {
+    content: 'https://figma.new',
+    description: 'Create a new Figma design file',
+    type: 'action',
+    iconUrl: chrome.runtime.getURL('/assets/figma.png'),
+  },
+  {
+    content: 'https://codepen.io/pen/',
+    description: 'Create a new CodePen',
+    type: 'action',
+    iconUrl: chrome.runtime.getURL('/assets/codepen.ico'),
   },
 ];

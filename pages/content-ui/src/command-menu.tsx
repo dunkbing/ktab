@@ -227,14 +227,13 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   return (
     <div
       role="presentation"
-      className="fixed inset-0 flex items-start justify-center bg-black/50 z-50"
+      className="fixed inset-0 flex items-start justify-center bg-gray-900/60 backdrop-blur-sm z-50"
       onMouseDown={handleMouseDown}>
       <div className="relative w-full max-w-2xl mt-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-xl rounded-xl" />
         <Command
           label="Command Menu"
-          className="relative w-full bg-gray-800/50 rounded-xl shadow-2xl overflow-hidden border border-gray-600">
-          <div className="flex items-center px-4 py-3 border-b border-gray-700/50">
+          className="relative w-full bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+          <div className="flex items-center px-4 py-3 border-b border-gray-700">
             {isLoading ? (
               <Loader className="w-5 h-5 text-gray-400 mr-2 animate-spin" />
             ) : (
@@ -245,7 +244,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
               ref={ref}
               onValueChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-gray-200 text-lg placeholder-gray-400 focus:outline-none"
+              className="w-full bg-transparent text-gray-200 text-lg placeholder-gray-500 focus:outline-none"
               placeholder="Search or enter a command..."
             />
           </div>
@@ -256,11 +255,11 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
                 <Command.Item
                   key={`${suggestion.content}`}
                   onSelect={handleSuggestionSelect(suggestion)}
-                  className={`command-item flex items-center px-2 py-2 text-gray-200 rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-white/5 ${
-                    index === selectedIndex ? 'bg-white/10' : ''
+                  className={`command-item flex items-center px-2 py-2 text-gray-300 rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-700/50 ${
+                    index === selectedIndex ? 'bg-gray-700/70' : ''
                   }`}>
                   <div className="flex items-center flex-1 min-w-0">
-                    <div className="w-8 h-8 mr-3 bg-gray-700/50 rounded-md flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 mr-3 bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0">
                       {getIconForSuggestion(suggestion)}
                     </div>
                     <div className="flex-1 min-w-0">
