@@ -115,7 +115,12 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   const listRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = useCallback((value: string) => {
-    setInput(value);
+    let newValue = value;
+    if (value === '/t') newValue = '/tab ';
+    if (value === '/h') newValue = '/history ';
+    if (value === '/b') newValue = '/bookmark ';
+
+    setInput(newValue);
     setIsLoading(true);
     setSelectedIndex(0);
   }, []);
@@ -123,8 +128,24 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   useEffect(() => {
     const getSuggestions = () => {
       if (input.length > 0) {
+        let command = '';
+        if (input.startsWith('/tab')) {
+          command = 'tab';
+        }
+        if (input.startsWith('/history')) command = 'history';
+        if (input.startsWith('/bookmark')) command = 'bookmark';
+
+        const newInput = input.replace(`/${command} `, '');
+        if (!newInput) {
+          setIsLoading(false);
+        }
+
         chrome.runtime.sendMessage(
-          { type: commands.getSuggestions, input },
+          {
+            type: commands.getSuggestions,
+            input: newInput,
+            command,
+          },
           (response: { suggestions: Suggestion[] }) => {
             if (response?.suggestions) {
               setSuggestions(response.suggestions);
@@ -168,7 +189,16 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace' && input.endsWith(' ')) {
+        const trimmedInput = input.trim();
+        if (trimmedInput === '/tab' || trimmedInput === '/history' || trimmedInput === '/bookmark') {
+          e.preventDefault();
+          setInput('');
+          return;
+        }
+      }
+
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const direction = e.key === 'ArrowDown' ? 1 : -1;
@@ -180,7 +210,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
         handleSuggestionSelect(suggestions[selectedIndex])();
       }
     },
-    [selectedIndex, suggestions, scrollToIndex, handleSuggestionSelect],
+    [input, selectedIndex, suggestions, scrollToIndex, handleSuggestionSelect],
   );
 
   const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = useCallback(
