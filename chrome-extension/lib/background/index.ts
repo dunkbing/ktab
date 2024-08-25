@@ -125,8 +125,20 @@ const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number
 };
 
 function isWebsite(input: string): boolean {
-  const websiteRegex = /^([\w-]+\.)+[\w-]{2,}$/;
-  return websiteRegex.test(input);
+  const cleanInput = input.replace(/^(https?:\/\/)/, '');
+  const websiteRegex = /^([\w-]+\.)+[\w-]{2,}(\/.*)?$/;
+  return websiteRegex.test(cleanInput);
+}
+
+async function getWebsiteSuggestion(input: string): Promise<Suggestion> {
+  const url = input.startsWith('http://') || input.startsWith('https://') ? input : `https://${input}`;
+
+  return {
+    content: url,
+    description: `Go to ${input}`,
+    type: 'website',
+    iconUrl: await fetchFavicon(url),
+  };
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -154,12 +166,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const initialSuggestions = [...actionSuggestions, ...tabSuggestions, ...googleSuggestions];
 
       if (isWebsite(input)) {
-        const websiteSuggestion: Suggestion = {
-          content: `https://${input}`,
-          description: `Go to ${input}`,
-          type: 'website',
-          iconUrl: await fetchFavicon(`https://${input}`),
-        };
+        const websiteSuggestion = await getWebsiteSuggestion(input);
         initialSuggestions.unshift(websiteSuggestion);
       }
 

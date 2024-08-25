@@ -126,6 +126,12 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setInput('');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const getSuggestions = () => {
       if (input.length > 0) {
         let command = '';
