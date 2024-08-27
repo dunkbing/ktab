@@ -137,7 +137,6 @@ async function getWebsiteSuggestion(input: string): Promise<Suggestion> {
     content: url,
     description: `Go to ${input}`,
     type: 'website',
-    iconUrl: await fetchFavicon(url),
   };
 }
 

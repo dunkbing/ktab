@@ -2,7 +2,9 @@
 
 ![Preview](sc/sc1.png)
 
-KTab is a simple Chrome extension that adds a customizable command palette to your browser, enhancing your browsing experience with quick access to various actions, searches, and navigation tools.
+KTab is a simple Chrome extension that adds a customizable command palette to your browser, enhancing your browsing efficiency and productivity.
+
+Sometimes I do live streams of coding this project on TikTok. Follow me at [@dunkbing](https://www.tiktok.com/@dunkbing) to catch these sessions.
 
 ## Features
 
@@ -22,10 +24,7 @@ KTab is a simple Chrome extension that adds a customizable command palette to yo
 
 ## Installation
 
-1. Clone this repository or download the source code.
-2. Open Chrome and navigate to `chrome://extensions`.
-3. Enable "Developer mode" in the top right corner.
-4. Click "Load unpacked" and select the directory containing the extension files.
+Download KTab from the Chrome Web Store: [KTab Chrome Extension](https://chromewebstore.google.com/detail/lpnolmmbpjnenjoanhdbgfdjiknmfpnm?authuser=0&hl=en)
 
 ## Usage
 
@@ -40,36 +39,18 @@ KTab is a simple Chrome extension that adds a customizable command palette to yo
 - `/history`: Search only through browsing history
 - `/bookmark`: Search only through bookmarks
 
-## Customization
-
-You can customize the quick actions by modifying the `actions` array in `constants.ts`. Each action should have the following structure:
-
-```typescript
-{
-  content: string;  // URL or action identifier
-  description: string;  // Display text in the palette
-  type: 'action';
-  iconUrl: string;  // Path to the icon file
-}
-```
-
 ## Development
 
 This extension is built using React and TypeScript. To set up the development environment:
 
-1. Install dependencies: `pnpm install`
-2. Build the extension: `pnpm run build`
-3. For development with hot-reloading: `pnpm dev`
+1. Clone the repository: `git clone [repository-url]`
+2. Navigate to the project directory: `cd ktab`
+3. Install dependencies: `pnpm install`
+4. Build the extension: `pnpm run build`
+5. For development with hot-reloading: `pnpm dev`
 
-## Contributing
+### Loading the Extension in Chrome
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-[MIT License](LICENSE)
-
-## Acknowledgements
-
-- Icons provided by [Lucide](https://lucide.dev/)
-- This project uses [Chrome Extension Boilerplate with React + Vite + TypeScript](https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite)
+1. Open Chrome and navigate to `chrome://extensions`.
+2. Enable "Developer mode" in the top right corner.
+3. Click "Load unpacked" and select the `dist` directory from the project folder.
