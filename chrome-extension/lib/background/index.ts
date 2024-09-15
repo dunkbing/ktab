@@ -117,13 +117,6 @@ const searchTabs = async (input: string): Promise<Suggestion[]> => {
   });
 };
 
-const prioritizeAndLimitResults = (suggestions: Suggestion[], maxResults: number = 20): Suggestion[] => {
-  const tabSuggestions = suggestions.filter(s => s.type === 'tab');
-  const otherSuggestions = suggestions.filter(s => s.type !== 'tab');
-
-  return [...tabSuggestions, ...otherSuggestions].slice(0, maxResults);
-};
-
 function isWebsite(input: string): boolean {
   const cleanInput = input.replace(/^(https?:\/\/)/, '');
   const websiteRegex = /^([\w-]+\.)+[\w-]{2,}(\/.*)?$/;
@@ -144,35 +137,55 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
     const command = request.command;
+
+    let resultsCount = 0;
+    const maxResults = 30;
+
+    const sendPartialResults = (suggestions: Suggestion[]) => {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'PARTIAL_SUGGESTIONS', suggestions });
+        }
+      });
+    };
+
     (async () => {
       if (command === 'history') {
-        const suggestions = await searchHistory(input, 30);
-        return sendResponse({ suggestions });
+        const suggestions = await searchHistory(input, maxResults);
+        sendPartialResults(suggestions);
+        return;
       } else if (command === 'bookmark') {
-        const suggestions = await searchBookmarks(input, 30);
-        return sendResponse({ suggestions });
+        const suggestions = await searchBookmarks(input, maxResults);
+        sendPartialResults(suggestions);
+        return;
       } else if (command === 'tab') {
         const suggestions = await searchTabs(input);
-        return sendResponse({ suggestions });
+        sendPartialResults(suggestions);
+        return;
       }
-
-      const [tabSuggestions, actionSuggestions, googleSuggestions] = await Promise.all([
-        searchTabs(input),
-        Promise.resolve(searchActions(input)),
-        fetchGoogleSuggestions(input),
-      ]);
-
-      const initialSuggestions = [...actionSuggestions, ...tabSuggestions, ...googleSuggestions];
 
       if (isWebsite(input)) {
         const websiteSuggestion = await getWebsiteSuggestion(input);
-        initialSuggestions.unshift(websiteSuggestion);
+        sendPartialResults([websiteSuggestion]);
+        resultsCount++;
       }
 
-      const prioritizedSuggestions = prioritizeAndLimitResults(initialSuggestions);
-      sendResponse({ suggestions: prioritizedSuggestions });
+      const sendResults = (suggestions: Suggestion[]) => {
+        if (resultsCount < maxResults) {
+          const newSuggestions = suggestions.slice(0, maxResults - resultsCount);
+          sendPartialResults(newSuggestions);
+          resultsCount += newSuggestions.length;
+        }
+      };
+
+      // Send results as they become available
+      searchTabs(input).then(sendResults);
+      fetchGoogleSuggestions(input).then(sendResults);
+      Promise.resolve(searchActions(input)).then(sendResults);
     })();
 
+    // Send an immediate response to keep the message channel open
+    sendResponse({ processing: true });
     return true;
   } else if (request.type === commands.switchTab) {
     const tabId = request.tabId as number;

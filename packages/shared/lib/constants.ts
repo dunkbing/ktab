@@ -27,6 +27,12 @@ export const actions: Suggestion[] = [
     iconUrl: chrome.runtime.getURL('/assets/sheets.png'),
   },
   {
+    content: 'https://meet.new',
+    description: 'Start a new Google Meet',
+    type: 'action',
+    iconUrl: chrome.runtime.getURL('/assets/meet.png'),
+  },
+  {
     content: 'https://www.notion.so/new',
     description: 'Create a new Notion page',
     type: 'action',
@@ -39,16 +45,16 @@ export const actions: Suggestion[] = [
     iconUrl: chrome.runtime.getURL('/assets/github.svg'),
   },
   {
+    content: 'https://text2audio.cc',
+    description: 'Generate audio from text',
+    type: 'action',
+    iconUrl: chrome.runtime.getURL('/assets/text2audio.ico'),
+  },
+  {
     content: 'https://trello.com/create-board',
     description: 'Create new Trello board',
     type: 'action',
     iconUrl: chrome.runtime.getURL('/assets/trello.png'),
-  },
-  {
-    content: 'https://meet.new',
-    description: 'Start a new Google Meet',
-    type: 'action',
-    iconUrl: chrome.runtime.getURL('/assets/meet.png'),
   },
   {
     content: 'https://figma.new',

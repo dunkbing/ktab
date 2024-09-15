@@ -108,7 +108,7 @@ SummaryHeading.displayName = 'SummaryHeading';
 
 const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, onClose }, ref) => {
   const [input, setInput] = useState('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(actions);
+  const [partialSuggestions, setPartialSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -135,16 +135,18 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
     const getSuggestions = () => {
       if (input.length > 0) {
         let command = '';
-        if (input.startsWith('/tab')) {
-          command = 'tab';
-        }
+        if (input.startsWith('/tab')) command = 'tab';
         if (input.startsWith('/history')) command = 'history';
         if (input.startsWith('/bookmark')) command = 'bookmark';
 
         const newInput = input.replace(`/${command} `, '');
         if (!newInput) {
           setIsLoading(false);
+          return;
         }
+
+        setIsLoading(true);
+        setPartialSuggestions([]);
 
         chrome.runtime.sendMessage(
           {
@@ -152,15 +154,12 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
             input: newInput,
             command,
           },
-          (response: { suggestions: Suggestion[] }) => {
-            if (response?.suggestions) {
-              setSuggestions(response.suggestions);
-              setIsLoading(false);
-            }
+          () => {
+            // This callback is just to keep the message channel open
           },
         );
       } else {
-        setSuggestions(actions);
+        setPartialSuggestions(actions);
         setIsLoading(false);
       }
     };
@@ -168,6 +167,26 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
 
     return () => clearTimeout(timeoutId);
   }, [input]);
+
+  useEffect(() => {
+    const handlePartialSuggestions = (message: any) => {
+      if (message.type === 'PARTIAL_SUGGESTIONS') {
+        setPartialSuggestions(prevSuggestions => {
+          const newSuggestions = [...prevSuggestions, ...message.suggestions];
+          const uniqueSuggestions = Array.from(new Set(newSuggestions.map(s => s.content))).map(
+            content => newSuggestions.find(s => s.content === content)!,
+          );
+          setIsLoading(false);
+          return uniqueSuggestions;
+        });
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(handlePartialSuggestions);
+    return () => {
+      chrome.runtime.onMessage.removeListener(handlePartialSuggestions);
+    };
+  }, []);
 
   const scrollToIndex = useCallback((index: number) => {
     if (listRef.current) {
@@ -208,15 +227,15 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const direction = e.key === 'ArrowDown' ? 1 : -1;
-        const newIndex = (selectedIndex + direction + suggestions.length) % suggestions.length;
+        const newIndex = (selectedIndex + direction + partialSuggestions.length) % partialSuggestions.length;
         setSelectedIndex(newIndex);
         scrollToIndex(newIndex);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        handleSuggestionSelect(suggestions[selectedIndex])();
+        handleSuggestionSelect(partialSuggestions[selectedIndex])();
       }
     },
-    [input, selectedIndex, suggestions, scrollToIndex, handleSuggestionSelect],
+    [input, selectedIndex, partialSuggestions, scrollToIndex, handleSuggestionSelect],
   );
 
   const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = useCallback(
@@ -254,10 +273,10 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
               placeholder="Search or enter a command..."
             />
           </div>
-          <SummaryHeading results={suggestions.length} />
+          <SummaryHeading results={partialSuggestions.length} />
           <Command.List ref={listRef} className="max-h-96 overflow-y-auto pb-2">
             <Command.Group className="px-4 py-2 text-sm text-gray-400">
-              {suggestions.map((suggestion, index) => (
+              {partialSuggestions.map((suggestion, index) => (
                 <Command.Item
                   key={`${suggestion.content}`}
                   onSelect={handleSuggestionSelect(suggestion)}
