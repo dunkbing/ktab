@@ -1,5 +1,21 @@
 import React, { forwardRef, useEffect, useState, useCallback, useRef } from 'react';
-import { Search, History, Bookmark, Globe, MoveDown, MoveUp, Loader } from 'lucide-react';
+import {
+  Search,
+  History,
+  Bookmark,
+  Globe,
+  MoveDown,
+  MoveUp,
+  Loader,
+  Pin,
+  Volume2,
+  RefreshCw,
+  Maximize,
+  Printer,
+  X,
+  Copy,
+  EyeOff,
+} from 'lucide-react';
 
 import { actions, commands } from '@extension/shared/lib/constants';
 import type { Suggestion } from '@extension/shared/lib/types';
@@ -82,7 +98,28 @@ const getIconForSuggestion = (suggestion: Suggestion) => {
     case 'tab':
       return <img src={`${suggestion.iconUrl}`} alt="Tab favicon" className="w-5 h-5" />;
     case 'action':
-      return <img src={`${suggestion.iconUrl}`} alt="Action favicon" className="w-5 h-5" />;
+      switch (suggestion.iconUrl) {
+        case 'Bookmark':
+          return <Bookmark className="w-5 h-5 text-yellow-400" />;
+        case 'Pin':
+          return <Pin className="w-5 h-5 text-gray-400" />;
+        case 'Mute':
+          return <Volume2 className="w-5 h-5 text-gray-400" />;
+        case 'Reload':
+          return <RefreshCw className="w-5 h-5 text-gray-400" />;
+        case 'Fullscreen':
+          return <Maximize className="w-5 h-5 text-gray-400" />;
+        case 'Print':
+          return <Printer className="w-5 h-5 text-gray-400" />;
+        case 'Close':
+          return <X className="w-5 h-5 text-gray-400" />;
+        case 'Duplicate':
+          return <Copy className="w-5 h-5 text-gray-400" />;
+        case 'Incognito':
+          return <EyeOff className="w-5 h-5 text-gray-400" />;
+        default:
+          return <img src={`${suggestion.iconUrl}`} alt="Action icon" className="w-5 h-5" />;
+      }
     case 'search':
       return <Search className="w-5 h-5 text-green-400" />;
     default:
@@ -169,7 +206,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   }, [input]);
 
   useEffect(() => {
-    const handlePartialSuggestions = (message: any) => {
+    const handlePartialSuggestions = (message: { type: string; suggestions: Suggestion[] }) => {
       if (message.type === 'PARTIAL_SUGGESTIONS') {
         setPartialSuggestions(prevSuggestions => {
           const newSuggestions = [...prevSuggestions, ...message.suggestions];
@@ -204,7 +241,13 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
       return () => {
         if (suggestion.type === 'tab') {
           chrome.runtime.sendMessage({ type: commands.switchTab, tabId: suggestion.tabId });
-        } else if (suggestion.type) {
+        } else if (suggestion.type === 'action') {
+          if (suggestion.action) {
+            suggestion.action();
+          } else {
+            chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
+          }
+        } else {
           chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
         }
         onClose?.();

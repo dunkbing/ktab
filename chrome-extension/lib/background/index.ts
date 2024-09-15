@@ -210,5 +210,62 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   }
 
+  switch (request.type) {
+    case commands.bookmarkCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
+        if (tab.id) {
+          try {
+            const bookmark = await chrome.bookmarks.create({ title: tab.title, url: tab.url });
+            console.log({ bookmark });
+          } catch (error) {
+            console.error({ error });
+          }
+        }
+      });
+      break;
+    case commands.pinCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab.id) chrome.tabs.update(tab.id, { pinned: !tab.pinned });
+      });
+      break;
+    case commands.muteCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        console.log({ tab });
+        if (!tab?.id) return;
+        const muted = !tab.mutedInfo?.muted;
+        chrome.tabs.update(tab.id, { muted });
+      });
+      break;
+    case commands.reloadCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab.id) chrome.tabs.reload(tab.id);
+      });
+      break;
+    case commands.fullscreenCurrentTab:
+      chrome.windows.getCurrent(window => {
+        if (window.id)
+          chrome.windows.update(window.id, { state: window.state === 'fullscreen' ? 'normal' : 'fullscreen' });
+      });
+      break;
+    case commands.printCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab.id) chrome.tabs.executeScript(tab.id, { code: 'window.print();' });
+      });
+      break;
+    case commands.closeCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab.id) chrome.tabs.remove(tab.id);
+      });
+      break;
+    case commands.duplicateCurrentTab:
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab.id) chrome.tabs.duplicate(tab.id);
+      });
+      break;
+    case commands.openIncognitoWindow:
+      chrome.windows.create({ incognito: true });
+      break;
+  }
+
   return true;
 });
