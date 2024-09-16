@@ -18,7 +18,6 @@ const manifest = {
   description: '__MSG_extensionDescription__',
   permissions: ['history', 'bookmarks', 'tabs', 'storage', 'activeTab'],
   omnibox: { keyword: 'newTab' },
-  options_page: 'options/index.html',
   commands: {
     'toggle-ktab': {
       suggested_key: {
