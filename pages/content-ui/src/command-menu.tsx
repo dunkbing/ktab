@@ -303,7 +303,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
       <div className="relative w-full max-w-2xl mt-16">
         <Command
           label="Command Menu"
-          className="relative w-full bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-700">
+          className="relative w-full bg-black opacity-80 rounded-xl shadow-2xl overflow-hidden border border-gray-600">
           <div className="flex items-center px-4 py-3 border-b border-gray-700">
             {isLoading ? (
               <Loader className="w-5 h-5 text-gray-400 mr-2 animate-spin" />
@@ -331,7 +331,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
                 <Command.Item
                   key={`${suggestion.content}`}
                   onSelect={handleSuggestionSelect(suggestion)}
-                  className={`command-item flex items-center px-2 py-2 text-gray-300 rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-700/50 ${
+                  className={`command-item flex items-center px-2 py-2 text-white rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-700/50 ${
                     index === selectedIndex ? 'bg-gray-700/70' : ''
                   }`}>
                   <div className="flex items-center flex-1 min-w-0">

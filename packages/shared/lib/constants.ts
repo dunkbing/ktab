@@ -55,7 +55,7 @@ export const actions: Suggestion[] = [
   },
   {
     content: 'https://text2audio.cc',
-    description: 'Generate audio from text',
+    description: 'Text to Speech',
     type: 'action',
     iconUrl: chrome.runtime.getURL('/assets/text2audio.ico'),
   },

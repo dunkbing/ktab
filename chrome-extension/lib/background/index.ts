@@ -44,11 +44,17 @@ const fetchGoogleSuggestions = async (input: string, limit: number = 5): Promise
       `http://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(input)}`,
     );
     const data: [string, string[]] = await response.json();
-    return data[1].slice(0, limit).map(suggestion => ({
+    const results: Suggestion[] = data[1].slice(0, limit).map(suggestion => ({
       content: `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`,
       description: `Search Google for: ${suggestion}`,
       type: 'search',
     }));
+    results.unshift({
+      content: `https://www.google.com/search?q=${encodeURIComponent(input)}`,
+      description: `Search Google for: ${input}`,
+      type: 'search',
+    });
+    return results;
   } catch (error) {
     console.error('Error fetching Google suggestions:', error);
     return [];
