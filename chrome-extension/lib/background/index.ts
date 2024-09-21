@@ -136,7 +136,7 @@ async function getWebsiteSuggestion(input: string): Promise<Suggestion> {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === commands.getSuggestions && request.input) {
     const input = request.input as string;
-    const command = request.command;
+    const prefix = request.prefix as string | undefined;
 
     let resultsCount = 0;
     const maxResults = 30;
@@ -150,16 +150,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
 
     (async () => {
-      if (command === 'history') {
+      if (prefix === 'history') {
         const suggestions = await searchHistory(input, maxResults);
         sendPartialResults(suggestions);
         return;
-      } else if (command === 'bookmark') {
+      } else if (prefix === 'bookmark') {
         const suggestions = await searchBookmarks(input, maxResults);
         sendPartialResults(suggestions);
         return;
-      } else if (command === 'tab') {
+      } else if (prefix === 'tab') {
         const suggestions = await searchTabs(input);
+        sendPartialResults(suggestions);
+        return;
+      } else if (prefix === 'action') {
+        const suggestions = searchActions(input);
         sendPartialResults(suggestions);
         return;
       }

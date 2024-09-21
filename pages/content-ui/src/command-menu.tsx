@@ -148,18 +148,28 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   const [partialSuggestions, setPartialSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prefix, setPrefix] = useState<string | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = useCallback((value: string) => {
-    let newValue = value;
-    if (value === '/t') newValue = '/tab ';
-    if (value === '/h') newValue = '/history ';
-    if (value === '/b') newValue = '/bookmark ';
-
-    setInput(newValue);
-    setIsLoading(true);
-    setSelectedIndex(0);
+    if (value === '/t') {
+      setPrefix('tab');
+      setInput('');
+    } else if (value === '/h') {
+      setPrefix('history');
+      setInput('');
+    } else if (value === '/b') {
+      setPrefix('bookmark');
+      setInput('');
+    } else if (value === '/a') {
+      setPrefix('action');
+      setInput('');
+    } else {
+      setInput(value);
+      setIsLoading(true);
+      setSelectedIndex(0);
+    }
   }, []);
 
   useEffect(() => {
@@ -171,12 +181,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   useEffect(() => {
     const getSuggestions = () => {
       if (input.length > 0) {
-        let command = '';
-        if (input.startsWith('/tab')) command = 'tab';
-        if (input.startsWith('/history')) command = 'history';
-        if (input.startsWith('/bookmark')) command = 'bookmark';
-
-        const newInput = input.replace(`/${command} `, '');
+        const newInput = input.trim();
         if (!newInput) {
           setIsLoading(false);
           return;
@@ -189,7 +194,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
           {
             type: commands.getSuggestions,
             input: newInput,
-            command,
+            prefix,
           },
           () => {
             // This callback is just to keep the message channel open
@@ -203,7 +208,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
     const timeoutId = setTimeout(getSuggestions, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [input]);
+  }, [input, prefix]);
 
   useEffect(() => {
     const handlePartialSuggestions = (message: { type: string; suggestions: Suggestion[] }) => {
@@ -251,6 +256,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
           chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
         }
         onClose?.();
+        setPrefix(null);
       };
     },
     [onClose],
@@ -258,13 +264,10 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace' && input.endsWith(' ')) {
-        const trimmedInput = input.trim();
-        if (trimmedInput === '/tab' || trimmedInput === '/history' || trimmedInput === '/bookmark') {
-          e.preventDefault();
-          setInput('');
-          return;
-        }
+      if (e.key === 'Backspace' && input === '' && prefix) {
+        e.preventDefault();
+        setPrefix(null);
+        return;
       }
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -278,7 +281,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
         handleSuggestionSelect(partialSuggestions[selectedIndex])();
       }
     },
-    [input, selectedIndex, partialSuggestions, scrollToIndex, handleSuggestionSelect],
+    [input, prefix, selectedIndex, partialSuggestions, scrollToIndex, handleSuggestionSelect],
   );
 
   const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = useCallback(
@@ -307,13 +310,18 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
             ) : (
               <Search className="w-5 h-5 text-gray-400 mr-2" />
             )}
+            {prefix && (
+              <div className="animate-fadeIn mr-2 px-2 py-1 bg-gray-700 text-gray-300 rounded-full text-xs">
+                {prefix}
+              </div>
+            )}
             <Command.Input
               value={input}
               ref={ref}
               onValueChange={handleInputChange}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-gray-200 text-lg placeholder-gray-500 focus:outline-none"
-              placeholder="Search or enter a command..."
+              placeholder="Search or enter URL..."
             />
           </div>
           <SummaryHeading results={partialSuggestions.length} />
