@@ -5,4 +5,5 @@ export type Suggestion = {
   iconUrl?: string;
   tabId?: number;
   action?: () => void;
+  shortcut?: string;
 };

@@ -16,6 +16,9 @@ import {
   Copy,
   EyeOff,
   ExternalLink,
+  DatabaseZap,
+  Cookie,
+  Archive,
 } from 'lucide-react';
 
 import { actions, commands } from '@extension/shared/lib/constants';
@@ -118,6 +121,16 @@ const getIconForSuggestion = (suggestion: Suggestion) => {
           return <Copy className="w-5 h-5 text-gray-400" />;
         case 'Incognito':
           return <EyeOff className="w-5 h-5 text-gray-400" />;
+        case 'CloseOthers':
+          return <X className="w-5 h-5 text-gray-400" />;
+        case 'Cache':
+          return <Archive className="w-5 h-5 text-gray-400" />;
+        case 'History':
+          return <History className="w-5 h-5 text-gray-400" />;
+        case 'Cookies':
+          return <Cookie className="w-5 h-5 text-gray-400" />;
+        case 'LocalStorage':
+          return <DatabaseZap className="w-5 h-5 text-gray-400" />;
         default:
           return <img src={`${suggestion.iconUrl}`} alt="Action icon" className="w-5 h-5" />;
       }
@@ -299,7 +312,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
   return (
     <div
       role="presentation"
-      className="fixed inset-0 flex items-start justify-center bg-gray-900/60 backdrop-blur-sm z-50"
+      className="fixed inset-0 flex items-start justify-center bg-gray-900/60 backdrop-blur-sm z-[9999]"
       onMouseDown={handleMouseDown}>
       <div className="relative w-full max-w-2xl mt-16">
         <Command
@@ -345,6 +358,9 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
                     </div>
                   </div>
                   {suggestion.type === 'tab' && <SwitchToTabButton />}
+                  {suggestion.type === 'action' && suggestion.shortcut && (
+                    <div className="ml-2 text-xs text-gray-500">{suggestion.shortcut}</div>
+                  )}
                 </Command.Item>
               ))}
             </Command.Group>

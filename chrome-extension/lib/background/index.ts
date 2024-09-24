@@ -188,13 +188,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       };
 
-      // Send results as they become available
       searchTabs(input).then(sendResults);
       fetchGoogleSuggestions(input).then(sendResults);
       Promise.resolve(searchActions(input)).then(sendResults);
     })();
 
-    // Send an immediate response to keep the message channel open
     sendResponse({ processing: true });
     return true;
   } else if (request.type === commands.switchTab) {
@@ -211,12 +209,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.history.deleteAll(() => {
       console.log('Browsing history cleared');
     });
-  } else if (request.type === 'RESTORE_TAB') {
-    const sessionId = request.sessionId as string;
-    chrome.sessions.restore(sessionId, restoredSession => {
-      if (restoredSession && restoredSession.tab) {
-        chrome.tabs.update(restoredSession.tab.id!, { active: true });
-      }
+  } else if (request.type === commands.clearOtherTabs) {
+    chrome.tabs.query({ currentWindow: true, active: false }, tabs => {
+      const tabIds = tabs.map(tab => tab.id).filter((id): id is number => id !== undefined);
+      chrome.tabs.remove(tabIds);
     });
   }
 
@@ -274,6 +270,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     case commands.openIncognitoWindow:
       chrome.windows.create({ incognito: true });
+      break;
+    case commands.clearCache:
+      chrome.browsingData.removeCache({}, () => {
+        console.log('Cache cleared');
+      });
+      break;
+    case commands.clearHistory:
+      chrome.history.deleteAll(() => {
+        console.log('Browsing history cleared');
+      });
+      break;
+    case commands.clearCookies:
+      chrome.browsingData.removeCookies({}, () => {
+        console.log('Cookies cleared');
+      });
+      break;
+    case commands.clearLocalStorage:
+      chrome.browsingData.removeLocalStorage({}, () => {
+        console.log('Local storage cleared');
+      });
       break;
   }
 
