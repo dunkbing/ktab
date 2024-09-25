@@ -86,19 +86,19 @@ export const actions: Suggestion[] = [
     action: () => chrome.runtime.sendMessage({ type: commands.duplicateCurrentTab }),
   },
   {
+    content: 'clear_other_tabs',
+    description: 'Close all tabs except the current one',
+    type: 'action',
+    iconUrl: 'CloseOthers',
+    action: () => chrome.runtime.sendMessage({ type: commands.clearOtherTabs }),
+  },
+  {
     content: 'open_incognito_window',
     description: 'Open new incognito window',
     type: 'action',
     iconUrl: 'Incognito',
     action: () => chrome.runtime.sendMessage({ type: commands.openIncognitoWindow }),
     shortcut: isMac ? '⌘⇧N' : 'Ctrl+Shift+N',
-  },
-  {
-    content: 'clear_other_tabs',
-    description: 'Close all tabs except the current one',
-    type: 'action',
-    iconUrl: 'CloseOthers',
-    action: () => chrome.runtime.sendMessage({ type: commands.clearOtherTabs }),
   },
   {
     content: 'clear_cache',
