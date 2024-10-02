@@ -366,17 +366,24 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
             </Command.Group>
           </Command.List>
           <footer className="flex flex-row justify-between px-4 py-2 text-xs text-gray-400 border-t border-gray-700">
-            <a
-              href="https://db99.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center hover:text-gray-300 transition-colors duration-200">
-              <ExternalLink size={12} className="mr-1" />
-              Developed by <span className="underline ml-1">dunkbing</span>
-            </a>
-            <a className="underline" href="https://github.com/dunkbing/ktab" target="_blank" rel="noopener noreferrer">
-              Source Code
-            </a>
+            <p>Cmd/Ctrl + Shift + K to toggle this window</p>
+            <div className="flex flex-row gap-2">
+              <a
+                href="https://db99.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center hover:text-gray-300 transition-colors duration-200">
+                <ExternalLink size={12} className="mr-1" />
+                Developed by <span className="underline ml-1">dunkbing</span>
+              </a>
+              <a
+                className="underline"
+                href="https://github.com/dunkbing/ktab"
+                target="_blank"
+                rel="noopener noreferrer">
+                Source Code
+              </a>
+            </div>
           </footer>
         </Command>
       </div>
