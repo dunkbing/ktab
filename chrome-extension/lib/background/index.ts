@@ -229,6 +229,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
       break;
+    case commands.removeBookmark:
+      chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
+        if (tab.url) {
+          try {
+            const [bookmark] = await chrome.bookmarks.search({ url: tab.url });
+            if (bookmark) {
+              await chrome.bookmarks.remove(bookmark.id);
+              console.log('Bookmark removed');
+            } else {
+              console.log('No bookmark found for the current tab');
+            }
+          } catch (error) {
+            console.error('Error removing bookmark:', error);
+          }
+        }
+      });
+      break;
     case commands.pinCurrentTab:
       chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
         if (tab.id) chrome.tabs.update(tab.id, { pinned: !tab.pinned });

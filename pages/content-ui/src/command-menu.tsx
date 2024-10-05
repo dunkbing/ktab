@@ -19,6 +19,7 @@ import {
   DatabaseZap,
   Cookie,
   Archive,
+  BookmarkMinus,
 } from 'lucide-react';
 
 import { actions, commands } from '@extension/shared/lib/constants';
@@ -66,7 +67,7 @@ const CommandItem = forwardRef<
   HTMLDivElement,
   {
     children: React.ReactNode;
-    onSelect: () => void;
+    onSelect?: () => void;
     className?: string;
   }
 >(({ children, onSelect, className }, ref) => (
@@ -76,7 +77,7 @@ const CommandItem = forwardRef<
     onClick={onSelect}
     onKeyDown={e => {
       if (e.key === 'Enter' || e.key === ' ') {
-        onSelect();
+        onSelect?.();
       }
     }}
     tabIndex={0}
@@ -105,6 +106,8 @@ const getIconForSuggestion = (suggestion: Suggestion) => {
       switch (suggestion.iconUrl) {
         case 'Bookmark':
           return <Bookmark className="w-5 h-5 text-yellow-400" />;
+        case 'RemoveBookmark':
+          return <BookmarkMinus className="w-5 h-5 text-yellow-400" />;
         case 'Pin':
           return <Pin className="w-5 h-5 text-gray-400" />;
         case 'Mute':
@@ -264,7 +267,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
           if (suggestion.action) {
             suggestion.action();
           } else {
-            chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
+            chrome.runtime.sendMessage({ type: suggestion.content });
           }
         } else {
           chrome.runtime.sendMessage({ type: commands.newTab, url: suggestion.content });
@@ -344,7 +347,7 @@ const CommandMenu = forwardRef<HTMLInputElement, CommandMenuProps>(({ isOpen, on
               {partialSuggestions.map((suggestion, index) => (
                 <Command.Item
                   key={`${suggestion.content}`}
-                  onSelect={handleSuggestionSelect(suggestion)}
+                  // onSelect={handleSuggestionSelect(suggestion)}
                   className={`command-item flex items-center px-2 py-2 text-white rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-gray-700/50 ${
                     index === selectedIndex ? 'bg-gray-700/70' : ''
                   }`}>
